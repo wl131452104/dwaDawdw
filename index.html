@@ -1,0 +1,2226 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频制作管理</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f7fa;
+            color: #2c3e50;
+        }
+        .tabs {
+            display: flex;
+            background-color: #ffffff;
+            padding: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .tab {
+            padding: 14px 20px;
+            margin-right: 10px;
+            cursor: pointer;
+            background-color: #ffffff;
+            border: 1px solid #e1e8ed;
+            border-radius: 5px;
+            color: #536171;
+            transition: all 0.3s ease;
+        }
+        .tab:hover {
+            background-color: #f8fafc;
+            color: #3498db;
+        }
+        .tab-content {
+            display: none;
+            padding: 25px;
+            background-color: #ffffff;
+            border-radius: 5px;
+            margin: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .active-tab {
+            background-color: #3498db;
+            color: #ffffff;
+            border: 1px solid #3498db;
+        }
+        .active-content {
+            display: block;
+        }
+
+        /* Style for the new options */
+        #newSceneOptions {
+            margin-top: 20px;
+            display: none;
+        }
+        #newSceneOptions button {
+            display: block;
+            padding: 12px 20px;
+            margin: 8px 0;
+            background-color: #ffffff;
+            border: 1px solid #e1e8ed;
+            border-radius: 5px;
+            cursor: pointer;
+            color: #536171;
+            transition: all 0.3s ease;
+            width: 200px;
+        }
+        #newSceneOptions button:hover {
+            background-color: #3498db;
+            color: #ffffff;
+            border-color: #3498db;
+        }
+        
+        /* 新增主按钮样式 */
+        button {
+            padding: 12px 24px;
+            background-color: #3498db;
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        
+        p {
+            color: #536171;
+            line-height: 1.6;
+        }
+        
+        /* 工具栏样式 */
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .toolbar button {
+            background-color: #ffffff;
+            color: #536171;
+            border: 1px solid #e1e8ed;
+            padding: 10px 16px;
+            font-size: 14px;
+        }
+        
+        .toolbar button:hover {
+            background-color: #f8fafc;
+            color: #3498db;
+            border-color: #3498db;
+        }
+        
+        /* 当按钮处于激活状态时的样式 */
+        .toolbar button.active {
+            background-color: #3498db;
+            color: #ffffff;
+            border-color: #3498db;
+        }
+
+        /* 表格样式 */
+        .table-container {
+            margin-top: 20px;
+            overflow-x: auto;
+            padding-right: 40px; /* 为选择按钮留出空间 */
+        }
+
+        .scene-table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #ffffff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .scene-table th,
+        .scene-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e1e8ed;
+        }
+
+        .scene-table th {
+            position: relative;
+            padding: 12px 15px;
+            background-color: #f8fafc;
+            color: #2c3e50;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .scene-table th[contenteditable="true"] {
+            outline: none;
+            min-width: 100px;
+            transition: all 0.2s ease;
+        }
+
+        .scene-table th[contenteditable="true"]:hover {
+            background-color: #f0f7ff;
+        }
+
+        .scene-table th[contenteditable="true"]:focus {
+            background-color: #fff;
+            box-shadow: inset 0 0 0 2px #3498db;
+        }
+
+        .scene-table td {
+            color: #536171;
+        }
+
+        .scene-table tbody tr:hover {
+            background-color: #f8fafc;
+        }
+
+        /* 确保表格在小屏幕上可以横向滚动 */
+        @media screen and (max-width: 1200px) {
+            .table-container {
+                max-width: 100%;
+                overflow-x: auto;
+            }
+        }
+
+        /* 可编辑单元格样式 */
+        .scene-table td[contenteditable="true"] {
+            position: relative;
+            outline: none;
+            min-width: 50px;
+            transition: all 0.2s ease;
+        }
+
+        .scene-table td[contenteditable="true"]:hover {
+            background-color: #f0f7ff;
+        }
+
+        .scene-table td[contenteditable="true"]:focus {
+            background-color: #fff;
+            box-shadow: inset 0 0 0 2px #3498db;
+        }
+
+        /* 空单元格样式 */
+        .scene-table td[contenteditable="true"]:empty::before {
+            content: "点击编辑";
+            color: #999;
+            font-style: italic;
+        }
+
+        /* 添加拖拽相关样式 */
+        .scene-table tr[draggable="true"] {
+            cursor: move;
+        }
+
+        .scene-table tr.dragging {
+            opacity: 0.5;
+            background-color: #f0f7ff;
+        }
+
+        .scene-table tr.drag-over {
+            border-top: 2px solid #3498db;
+        }
+
+        /* 修改第一列样式 */
+        .scene-table td:first-child {
+            cursor: move;
+            user-select: none;
+            position: relative;
+            width: 30px; /* 固定宽度 */
+            padding: 12px 0; /* 移除左右padding */
+            text-indent: -9999px; /* 隐藏文字内容 */
+        }
+
+        .scene-table td:first-child::before {
+            content: "⋮⋮";
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            color: #999;
+            opacity: 0.8;
+            text-indent: 0;
+            font-size: 18px;
+        }
+
+        .scene-table td:first-child:hover::before {
+            color: #3498db;
+        }
+
+        /* 修改插入按钮的样式 */
+        .insert-column-btn {
+            position: absolute;
+            width: 12px;  /* 进一步减小按钮尺寸 */
+            height: 12px; /* 进一步减小按钮尺寸 */
+            border-radius: 50%;
+            background-color: #ffffff;
+            border: 1px solid #e1e8ed;
+            color: #536171;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 10px;  /* 进一步减小加号图标的大小 */
+            z-index: 2;
+            transition: all 0.2s ease;
+            padding: 0;
+            line-height: 1;
+        }
+
+        /* 左侧插入按钮 */
+        .insert-column-btn.left {
+            left: -6px;  /* 调整位置以适应新的尺寸 */
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* 右侧插入按钮 */
+        .insert-column-btn.right {
+            right: -6px;  /* 调整位置以适应新的尺寸 */
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .scene-table th:hover .insert-column-btn {
+            display: flex;
+        }
+
+        .insert-column-btn:hover {
+            background-color: #3498db;
+            color: #ffffff;
+            border-color: #3498db;
+        }
+
+        /* 添加列分隔线效果 */
+        .scene-table th:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 25%;
+            height: 50%;
+            width: 1px;
+            background-color: #e1e8ed;
+        }
+
+        /* 修改右上角按钮容器样式，添加历史模板相关样式 */
+        .top-actions {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 100;
+        }
+
+        /* 历史模板列表样式 */
+        .template-list {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 100%;
+            background-color: #ffffff;
+            min-width: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            border-radius: 5px;
+            margin-top: 5px;
+        }
+
+        .template-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid #e1e8ed;
+            cursor: pointer;
+        }
+
+        .template-list-item:hover {
+            background-color: #f8fafc;
+        }
+
+        .template-list-item .template-info {
+            flex-grow: 1;
+        }
+
+        .template-list-item .template-name {
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .template-list-item .template-date {
+            font-size: 12px;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        .template-list-item .template-actions {
+            display: flex;
+            gap: 8px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .template-list-item:hover .template-actions {
+            opacity: 1;
+        }
+
+        .template-actions button {
+            padding: 4px 8px;
+            font-size: 12px;
+            background: none;
+            border: 1px solid #e1e8ed;
+            color: #536171;
+        }
+
+        .template-actions button:hover {
+            background-color: #3498db;
+            color: #fff;
+            border-color: #3498db;
+        }
+
+        /* 修改下拉菜单的显示逻辑 */
+        .dropdown.active .dropdown-content,
+        .dropdown.active .template-list {
+            display: block;
+        }
+
+        /* 导出下拉菜单样式 */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: #ffffff;
+            min-width: 160px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            border-radius: 5px;
+            z-index: 1;
+        }
+
+        .dropdown-content button {
+            width: 100%;
+            padding: 12px 16px;
+            text-align: left;
+            background: none;
+            border: none;
+            color: #536171;
+        }
+
+        .dropdown-content button:hover {
+            background-color: #f8fafc;
+            color: #3498db;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        /* 图标样式 */
+        .button-icon {
+            margin-right: 8px;
+        }
+
+        /* 添加行插入按钮样式 */
+        .scene-table tbody tr {
+            position: relative;
+        }
+
+        .insert-row-btn {
+            position: absolute;
+            left: 15px; /* 第一列宽度调整后的位置 */
+            top: 50%;
+            transform: translateY(-50%);
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background-color: #ffffff;
+            border: 1px solid #e1e8ed;
+            color: #536171;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            z-index: 1;
+            transition: all 0.2s ease;
+        }
+
+        .scene-table tbody tr:hover .insert-row-btn {
+            display: flex;
+        }
+
+        .insert-row-btn:hover {
+            background-color: #3498db;
+            color: #ffffff;
+            border-color: #3498db;
+        }
+
+        /* 调整第一列宽度 */
+        .scene-table td:first-child {
+            padding-left: 40px; /* 为按钮留出空间 */
+        }
+
+        /* 添加选择按钮样式 */
+        .select-row-btn {
+            position: absolute;
+            right: -30px; /* 放在表格右侧 */
+            top: 50%;
+            transform: translateY(-50%);
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            background-color: #ffffff;
+            border: 1px solid #e1e8ed;
+            color: #536171;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .scene-table tbody tr:hover .select-row-btn {
+            display: flex;
+        }
+
+        .select-row-btn:hover {
+            background-color: #f0f7ff;
+            border-color: #3498db;
+            color: #3498db;
+        }
+
+        .select-row-btn.selected {
+            background-color: #3498db;
+            border-color: #3498db;
+            color: #ffffff;
+            display: flex;
+        }
+
+        /* 添加底部操作栏样式 */
+        .bottom-actions {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #ffffff;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            padding: 15px 25px;
+            border-radius: 8px 8px 0 0;
+            display: none;
+            align-items: center;
+            gap: 15px;
+            z-index: 1000;
+        }
+
+        .bottom-actions.show {
+            display: flex;
+        }
+
+        .bottom-actions .selection-info {
+            color: #2c3e50;
+            font-weight: 500;
+            margin-right: 15px;
+            padding-right: 15px;
+            border-right: 1px solid #e1e8ed;
+        }
+
+        .bottom-actions button {
+            padding: 8px 16px;
+            font-size: 14px;
+            background-color: #ffffff;
+            color: #536171;
+            border: 1px solid #e1e8ed;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .bottom-actions button:hover {
+            background-color: #f0f7ff;
+            color: #3498db;
+            border-color: #3498db;
+        }
+
+        .bottom-actions button.delete {
+            color: #e74c3c;
+            border-color: #e74c3c;
+        }
+
+        .bottom-actions button.delete:hover {
+            background-color: #e74c3c;
+            color: #ffffff;
+        }
+
+        .bottom-actions button.cancel {
+            background-color: #f8f9fa;
+        }
+
+        /* 修改子菜单样式 */
+        .action-submenu {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #ffffff;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            border-radius: 4px;
+            padding: 8px 0;
+            display: none;
+            min-width: 150px;
+            margin-bottom: 10px; /* 增加间距 */
+            z-index: 1002; /* 确保在最上层 */
+        }
+
+        .action-submenu::after {
+            content: '';
+            position: absolute;
+            bottom: -10px; /* 调整箭头位置 */
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 10px solid #ffffff;
+        }
+
+        /* 修改子菜单的显示逻辑 */
+        .has-submenu {
+            position: relative;
+            padding-top: 10px; /* 为子菜单留出空间 */
+            padding-bottom: 10px;
+        }
+
+        /* 添加一个透明的区域来保持子菜单显示 */
+        .has-submenu::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 100%;
+            height: 20px; /* 增加可以移动到子菜单的区域 */
+        }
+
+        /* 修改子菜单显示触发方式 */
+        .has-submenu.active .action-submenu {
+            display: block;
+        }
+
+        /* 移动位置输入框弹窗样式 */
+        .move-dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1001;
+            display: none;
+            min-width: 300px;
+        }
+
+        .move-dialog h3 {
+            margin: 0 0 15px 0;
+            color: #2c3e50;
+        }
+
+        .move-dialog input {
+            width: 100%;
+            padding: 8px;
+            margin: 10px 0;
+            border: 1px solid #e1e8ed;
+            border-radius: 4px;
+        }
+
+        .move-dialog .dialog-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .move-dialog-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+            display: none;
+        }
+
+        .move-dialog button {
+            padding: 8px 16px;
+            font-size: 14px;
+            border-radius: 4px;
+        }
+
+        .move-dialog button.cancel {
+            background-color: #f8f9fa;
+            color: #536171;
+            border: 1px solid #e1e8ed;
+        }
+
+        .move-dialog button:not(.cancel) {
+            background-color: #3498db;
+            color: #ffffff;
+            border: none;
+        }
+
+        /* 添加列拖动样式 */
+        .scene-table th {
+            cursor: move;
+            user-select: none;
+        }
+
+        .scene-table th.dragging {
+            opacity: 0.5;
+            background-color: #f0f7ff;
+        }
+
+        .scene-table th.drag-over {
+            border-left: 2px solid #3498db;
+        }
+
+        /* 添加列头下拉箭头样式 */
+        .column-menu-btn {
+            position: absolute;
+            right: 4px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #536171;
+            opacity: 0;
+            transition: all 0.2s ease;
+        }
+
+        .scene-table th:hover .column-menu-btn {
+            opacity: 1;
+        }
+
+        /* 列菜单样式 */
+        .column-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: #ffffff;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            min-width: 160px;
+            z-index: 1000;
+            display: none;
+        }
+
+        .column-menu.show {
+            display: block;
+        }
+
+        .column-menu-item {
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            color: #536171;
+            transition: all 0.2s ease;
+        }
+
+        .column-menu-item:hover {
+            background-color: #f0f7ff;
+            color: #3498db;
+        }
+
+        .column-menu-item.has-submenu::after {
+            content: '›';
+            margin-left: 8px;
+        }
+
+        /* 列编辑子菜单 */
+        .column-edit-menu {
+            position: absolute;
+            left: 100%;
+            top: 0;
+            background: #ffffff;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            min-width: 200px;
+            display: none;
+            padding: 12px;
+        }
+
+        .column-menu-item:hover .column-edit-menu {
+            display: block;
+        }
+
+        /* 列选项样式 */
+        .column-options {
+            margin-top: 8px;
+            border-top: 1px solid #e1e8ed;
+            padding-top: 8px;
+        }
+
+        .column-option-item {
+            display: flex;
+            align-items: center;
+            padding: 4px 0;
+        }
+
+        .add-option-btn {
+            padding: 4px 8px;
+            color: #3498db;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        /* 编辑表单样式 */
+        .edit-form-group {
+            margin-bottom: 8px;
+        }
+
+        .edit-form-group label {
+            display: block;
+            margin-bottom: 4px;
+            color: #2c3e50;
+            font-size: 12px;
+        }
+
+        .edit-form-group input,
+        .edit-form-group select {
+            width: 100%;
+            padding: 6px;
+            border: 1px solid #e1e8ed;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        /* 单元格选项下拉菜单样式 */
+        .cell-options-dropdown {
+            position: absolute;
+            background: #ffffff;
+            border: 1px solid #e1e8ed;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            z-index: 1000;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .cell-option-item {
+            padding: 8px 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .cell-option-item:hover {
+            background-color: #f0f7ff;
+            color: #3498db;
+        }
+
+        /* 列选项输入框样式 */
+        .column-option-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .column-option-item input {
+            flex: 1;
+            padding: 4px 8px;
+            border: 1px solid #e1e8ed;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .column-option-item button {
+            padding: 4px 8px;
+            font-size: 12px;
+            color: #e74c3c;
+            border: 1px solid #e74c3c;
+            border-radius: 4px;
+            background: none;
+            cursor: pointer;
+        }
+
+        .column-option-item button:hover {
+            background-color: #e74c3c;
+            color: #ffffff;
+        }
+
+        /* 添加选项弹窗样式 */
+        .options-dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.2);
+            padding: 20px;
+            min-width: 300px;
+            z-index: 1100;
+            display: none;
+        }
+
+        .options-dialog h3 {
+            margin: 0 0 15px 0;
+            color: #2c3e50;
+            font-size: 16px;
+        }
+
+        .options-dialog .options-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+        }
+
+        .options-dialog .dialog-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .options-dialog-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1099;
+            display: none;
+        }
+
+        /* 添加选项按钮样式 */
+        .options-dialog .add-option-btn {
+            width: 100%;
+            text-align: left;
+            padding: 8px 16px;
+            margin: 10px 0;
+            background: none;
+            border: 1px solid #e1e8ed;
+            border-radius: 4px;
+            color: #3498db;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+        }
+
+        .options-dialog .add-option-btn:hover {
+            background-color: #f0f7ff;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="tabs">
+        <div class="tab" onclick="showTab(0)">分镜制作</div>
+        <div class="tab" onclick="showTab(1)">故事板</div>
+        <div class="tab" onclick="showTab(2)">拍摄计划</div>
+        <div class="tab" onclick="showTab(3)">拍摄通告</div>
+    </div>
+
+    <div class="tab-content" id="content1">
+        <h2>分镜制作内容</h2>
+        
+        <!-- 修改右上角按钮部分 -->
+        <div class="top-actions">
+            <button onclick="saveTable()" title="保存">
+                <span class="button-icon">💾</span>保存
+            </button>
+            <div class="dropdown">
+                <button onclick="toggleTemplateList(this)">
+                    <span class="button-icon">📋</span>历史模板
+                </button>
+                <div class="template-list" id="templateList">
+                    <!-- 模板列表会通过 JavaScript 动态添加 -->
+                </div>
+            </div>
+            <div class="dropdown">
+                <button>
+                    <span class="button-icon">📥</span>导出
+                </button>
+                <div class="dropdown-content">
+                    <button onclick="exportToPDF()">导出为 PDF</button>
+                    <button onclick="exportToExcel()">导出为 Excel</button>
+                </div>
+            </div>
+        </div>
+
+        <p>这里可以添加分镜制作的详细内容。</p>
+
+        <!-- 工具栏 -->
+        <div class="toolbar">
+            <button onclick="toggleNewSceneOptions()">新建</button>
+            <button onclick="toggleBatchMode()">批量模式</button>
+            <button onclick="toggleSelection()">选择</button>
+            <button onclick="openSceneSettings()">分镜设置</button>
+            <button onclick="openColumnSettings()">列设置</button>
+        </div>
+
+        <!-- New Scene Options -->
+        <div id="newSceneOptions">
+            <button onclick="createScene(1)">创建分镜</button>
+            <button onclick="createScene(5)">创建5个分镜</button>
+            <button onclick="createScene(10)">创建10个分镜</button>
+            <button onclick="createScene(0)">创建场景</button>
+        </div>
+
+        <!-- 分镜表格 -->
+        <div class="table-container">
+            <table class="scene-table">
+                <thead>
+                    <tr>
+                        <th>排序</th>
+                        <th>镜号</th>
+                        <th>场景预期</th>
+                        <th>摄像机角度</th>
+                        <th>景别</th>
+                        <th>拍摄手法</th>
+                        <th>时长(秒)</th>
+                        <th>内容</th>
+                        <th>备注</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td contenteditable="true">1</td>
+                        <td contenteditable="true">1-1</td>
+                        <td contenteditable="true"></td>
+                        <td contenteditable="true"></td>
+                        <td contenteditable="true"></td>
+                        <td contenteditable="true"></td>
+                        <td contenteditable="true"></td>
+                        <td contenteditable="true"></td>
+                        <td contenteditable="true"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 添加底部操作栏 -->
+        <div class="bottom-actions">
+            <span class="selection-info">已选中 0 个项目</span>
+            <div class="has-submenu">
+                <button type="button">插入镜头 ▼</button>
+                <div class="action-submenu">
+                    <button type="button" onclick="insertShotBefore()">向前插入</button>
+                    <button type="button" onclick="insertShotAfter()">向后插入</button>
+                </div>
+            </div>
+            <div class="has-submenu">
+                <button type="button">移动镜头 ▼</button>
+                <div class="action-submenu">
+                    <button type="button" onclick="moveShotToFront()">移到最前面</button>
+                    <button type="button" onclick="moveShotToPosition()">移动指定位置</button>
+                    <button type="button" onclick="moveShotToEnd()">移到最后面</button>
+                </div>
+            </div>
+            <button onclick="copyShot()">复制镜头</button>
+            <button onclick="deleteShot()" class="delete">删除镜头</button>
+            <button onclick="cancelSelection()" class="cancel">取消选择</button>
+        </div>
+
+        <!-- 添加移动位置输入框弹窗 -->
+        <div class="move-dialog-overlay"></div>
+        <div class="move-dialog">
+            <h3>请输入目标镜号</h3>
+            <input type="number" id="targetPosition" min="1" placeholder="请输入镜号">
+            <div class="dialog-buttons">
+                <button onclick="closeDialog()" class="cancel">取消</button>
+                <button onclick="confirmMove()">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-content" id="content2">
+        <h2>故事板内容</h2>
+        <p>这里可以添加故事板的详细内容。</p>
+    </div>
+
+    <div class="tab-content" id="content3">
+        <h2>拍摄计划内容</h2>
+        <p>这里可以添加拍摄计划的详细内容。</p>
+    </div>
+
+    <div class="tab-content" id="content4">
+        <h2>拍摄通告内容</h2>
+        <p>这里可以添加拍摄通告的详细内容。</p>
+    </div>
+
+    <script>
+        function showTab(index) {
+            // Hide all contents
+            let contents = document.querySelectorAll('.tab-content');
+            for (let content of contents) {
+                content.classList.remove('active-content');
+            }
+
+            // Remove active class from all tabs
+            let tabs = document.querySelectorAll('.tab');
+            for (let tab of tabs) {
+                tab.classList.remove('active-tab');
+            }
+
+            // Show selected tab content
+            document.getElementById('content' + (index + 1)).classList.add('active-content');
+            tabs[index].classList.add('active-tab');
+        }
+
+        // Initialize with the first tab selected
+        showTab(0);
+
+        function toggleBatchMode() {
+            const button = event.target;
+            button.classList.toggle('active');
+            
+            // 清除所有选择
+            document.querySelectorAll('.select-row-btn.selected').forEach(btn => {
+                btn.classList.remove('selected');
+                btn.parentElement.classList.remove('selected-row');
+            });
+        }
+
+        function toggleSelection() {
+            const button = event.target;
+            button.classList.toggle('active');
+            // 这里添加选择功能的具体逻辑
+        }
+
+        function openSceneSettings() {
+            // 这里添加打开分镜设置的具体逻辑
+            alert('打开分镜设置');
+        }
+
+        function openColumnSettings() {
+            // 这里添加打开列设置的具体逻辑
+            alert('打开列设置');
+        }
+
+        // 添加回新建选项的显示/隐藏功能
+        function toggleNewSceneOptions() {
+            const options = document.getElementById('newSceneOptions');
+            if (options.style.display === 'none' || options.style.display === '') {
+                options.style.display = 'block';
+            } else {
+                options.style.display = 'none';
+            }
+        }
+
+        // 修改创建场景函数
+        function createScene(count) {
+            if(count === 0) {
+                // 创建场景的逻辑
+                alert('创建新场景');
+            } else {
+                // 创建指定数量的分镜
+                for(let i = 0; i < count; i++) {
+                    addNewRow();
+                }
+            }
+            // 创建完成后隐藏选项
+            document.getElementById('newSceneOptions').style.display = 'none';
+        }
+
+        // 修改添加新行的函数
+        function addNewRow(insertAfterIndex = -1) {
+            const tbody = document.querySelector('.scene-table tbody');
+            const rows = tbody.children;
+            const newRow = document.createElement('tr');
+            newRow.draggable = true;
+
+            // 创建插入按钮
+            const insertBtn = document.createElement('button');
+            insertBtn.className = 'insert-row-btn';
+            insertBtn.innerHTML = '+';
+            insertBtn.onclick = (e) => {
+                e.stopPropagation();
+                const currentIndex = Array.from(rows).indexOf(newRow);
+                addNewRow(currentIndex);
+            };
+
+            // 创建选择按钮
+            const selectBtn = document.createElement('button');
+            selectBtn.className = 'select-row-btn';
+            selectBtn.innerHTML = '✓';
+            selectBtn.onclick = (e) => {
+                e.stopPropagation();
+                toggleRowSelection(selectBtn);
+            };
+
+            // 创建单元格
+            for(let i = 0; i < 9; i++) {
+                const td = document.createElement('td');
+                td.contentEditable = true;
+                
+                if(i === 0) {
+                    // 第一列只显示拖拽图标
+                    td.textContent = '';
+                    td.contentEditable = false;
+                    addLongPressHandler(td);
+                }
+                else if(i === 1) {
+                    // 镜号列，初始为空，由updateRowNumbers统一处理
+                    td.textContent = '';
+                }
+                
+                newRow.appendChild(td);
+            }
+
+            // 添加插入按钮
+            newRow.appendChild(insertBtn);
+
+            // 添加选择按钮
+            newRow.appendChild(selectBtn);
+
+            // 插入到指定位置
+            if(insertAfterIndex >= 0 && insertAfterIndex < rows.length) {
+                tbody.insertBefore(newRow, rows[insertAfterIndex + 1]);
+            } else {
+                tbody.appendChild(newRow);
+            }
+
+            // 初始化拖拽功能
+            addDragEvents(newRow);
+            updateRowNumbers();
+        }
+
+        // 修改初始化函数，为现有行添加按钮
+        function initializeInsertButtons() {
+            const rows = document.querySelectorAll('.scene-table tbody tr');
+            rows.forEach(row => {
+                const insertBtn = document.createElement('button');
+                insertBtn.className = 'insert-row-btn';
+                insertBtn.innerHTML = '+';
+                insertBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    const currentIndex = Array.from(row.parentElement.children).indexOf(row);
+                    addNewRow(currentIndex);
+                };
+                row.appendChild(insertBtn);
+
+                // 添加选择按钮
+                const selectBtn = document.createElement('button');
+                selectBtn.className = 'select-row-btn';
+                selectBtn.innerHTML = '✓';
+                selectBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    toggleRowSelection(selectBtn);
+                };
+                row.appendChild(selectBtn);
+            });
+        }
+
+        // 为现有的行添加拖拽功能
+        function initializeDragAndDrop() {
+            const rows = document.querySelectorAll('.scene-table tbody tr');
+            rows.forEach(row => {
+                row.draggable = true;
+                addDragEvents(row);
+                const firstCell = row.querySelector('td:first-child');
+                if (firstCell) {
+                    firstCell.contentEditable = false;
+                    addLongPressHandler(firstCell);
+                }
+            });
+        }
+
+        // 添加拖拽事件监听器
+        function addDragEvents(row) {
+            row.addEventListener('dragstart', handleDragStart);
+            row.addEventListener('dragend', handleDragEnd);
+            row.addEventListener('dragover', handleDragOver);
+            row.addEventListener('drop', handleDrop);
+        }
+
+        // 长按触发拖拽
+        function addLongPressHandler(element) {
+            let pressTimer;
+            
+            element.addEventListener('mousedown', function(e) {
+                pressTimer = setTimeout(() => {
+                    const row = element.parentElement;
+                    row.draggable = true;
+                }, 500);
+            });
+
+            element.addEventListener('mouseup', function(e) {
+                clearTimeout(pressTimer);
+            });
+
+            element.addEventListener('mouseleave', function(e) {
+                clearTimeout(pressTimer);
+            });
+        }
+
+        // 拖拽事件处理函数
+        function handleDragStart(e) {
+            this.classList.add('dragging');
+        }
+
+        function handleDragEnd(e) {
+            this.classList.remove('dragging');
+            updateRowNumbers();
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            const draggingRow = document.querySelector('.dragging');
+            const rows = [...document.querySelectorAll('.scene-table tbody tr:not(.dragging)')];
+            
+            const row = rows.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = e.clientY - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+
+            if (row) {
+                row.classList.add('drag-over');
+                setTimeout(() => row.classList.remove('drag-over'), 100);
+                row.parentNode.insertBefore(draggingRow, row);
+            }
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+        }
+
+        // 修改更新行号函数
+        function updateRowNumbers() {
+            const rows = document.querySelectorAll('.scene-table tbody tr');
+            rows.forEach((row, index) => {
+                const sceneNumberCell = row.querySelector('td:nth-child(2)');
+                if (sceneNumberCell) {
+                    sceneNumberCell.textContent = index + 1;  // 直接使用从1开始的数字
+                }
+            });
+        }
+
+        // 修改插入列函数
+        function insertColumn(index) {
+            const table = document.querySelector('.scene-table');
+            const rows = table.querySelectorAll('tr');
+            
+            // 在每一行插入新单元格
+            rows.forEach((row, rowIndex) => {
+                const cell = document.createElement(rowIndex === 0 ? 'th' : 'td');
+                cell.contentEditable = true;
+                
+                if(rowIndex === 0) {
+                    // 表头单元格
+                    cell.textContent = '新列';  // 设置默认文本
+                    cell.setAttribute('draggable', 'true'); // 添加拖动属性
+                    
+                    // 添加拖动事件监听器
+                    cell.addEventListener('dragstart', handleColumnDragStart);
+                    cell.addEventListener('dragend', handleColumnDragEnd);
+                    cell.addEventListener('dragover', handleColumnDragOver);
+                    cell.addEventListener('drop', handleColumnDrop);
+                }
+                
+                const targetCell = row.children[index];
+                row.insertBefore(cell, targetCell);
+
+                // 如果是表头行，在插入后添加按钮
+                if(rowIndex === 0) {
+                    // 添加左侧插入按钮
+                    const leftButton = document.createElement('button');
+                    leftButton.className = 'insert-column-btn left';
+                    leftButton.innerHTML = '+';
+                    leftButton.title = '在左侧插入新列';
+                    leftButton.onclick = (e) => {
+                        e.stopPropagation();
+                        const currentIndex = Array.from(cell.parentElement.children).indexOf(cell);
+                        insertColumn(currentIndex);
+                    };
+                    cell.appendChild(leftButton);
+
+                    // 添加右侧插入按钮
+                    const rightButton = document.createElement('button');
+                    rightButton.className = 'insert-column-btn right';
+                    rightButton.innerHTML = '+';
+                    rightButton.title = '在右侧插入新列';
+                    rightButton.onclick = (e) => {
+                        e.stopPropagation();
+                        const currentIndex = Array.from(cell.parentElement.children).indexOf(cell);
+                        insertColumn(currentIndex + 1);
+                    };
+                    cell.appendChild(rightButton);
+
+                    // 添加列菜单按钮
+                    const menuBtn = document.createElement('button');
+                    menuBtn.className = 'column-menu-btn';
+                    menuBtn.innerHTML = '▼';
+                    menuBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        document.querySelectorAll('.column-menu.show').forEach(menu => {
+                            if (menu !== cell.querySelector('.column-menu')) {
+                                menu.classList.remove('show');
+                            }
+                        });
+                        cell.querySelector('.column-menu').classList.toggle('show');
+                    };
+                    cell.appendChild(menuBtn);
+
+                    // 创建列菜单
+                    const menu = createColumnMenu(cell);
+                    cell.appendChild(menu);
+                }
+            });
+        }
+
+        // 修改初始化列按钮函数
+        function initializeColumnButtons() {
+            const headers = document.querySelectorAll('.scene-table th');
+            headers.forEach((header, index) => {
+                if (index === 0) return; // 跳过第一列
+
+                header.contentEditable = true;
+                
+                // 添加左侧插入按钮
+                const leftButton = document.createElement('button');
+                leftButton.className = 'insert-column-btn left';
+                leftButton.innerHTML = '+';
+                leftButton.title = '在左侧插入新列';
+                leftButton.onclick = (e) => {
+                    e.stopPropagation();
+                    insertColumn(index);
+                };
+                header.appendChild(leftButton);
+
+                // 添加右侧插入按钮
+                const rightButton = document.createElement('button');
+                rightButton.className = 'insert-column-btn right';
+                rightButton.innerHTML = '+';
+                rightButton.title = '在右侧插入新列';
+                rightButton.onclick = (e) => {
+                    e.stopPropagation();
+                    insertColumn(index + 1);
+                };
+                header.appendChild(rightButton);
+                
+                // 添加列菜单按钮
+                const menuBtn = document.createElement('button');
+                menuBtn.className = 'column-menu-btn';
+                menuBtn.innerHTML = '▼';
+                menuBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    // 关闭其他打开的菜单
+                    document.querySelectorAll('.column-menu.show').forEach(menu => {
+                        if (menu !== header.querySelector('.column-menu')) {
+                            menu.classList.remove('show');
+                        }
+                    });
+                    // 切换当前菜单
+                    header.querySelector('.column-menu').classList.toggle('show');
+                };
+                header.appendChild(menuBtn);
+
+                // 创建列菜单
+                const menu = createColumnMenu(header);
+                header.appendChild(menu);
+            });
+
+            // 点击其他地方关闭菜单
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.column-menu') && !e.target.closest('.column-menu-btn')) {
+                    document.querySelectorAll('.column-menu.show').forEach(menu => {
+                        menu.classList.remove('show');
+                    });
+                }
+            });
+        }
+
+        // 修改更新列类型函数
+        function updateColumnType(select, columnIndex) {
+            const header = select.closest('th');
+            const optionsGroup = header.querySelector('.column-options');
+            // 移除类型相关的显示/隐藏逻辑，选项始终显示
+        }
+
+        // 修改隐藏列函数
+        function hideColumn(header) {
+            const index = Array.from(header.parentElement.children).indexOf(header);
+            const table = header.closest('table');
+            const rows = table.querySelectorAll('tr');
+            rows.forEach(row => {
+                row.children[index].style.display = 'none';
+            });
+            // 关闭菜单
+            header.querySelector('.column-menu').classList.remove('show');
+        }
+
+        // 修改删除列函数
+        function deleteColumn(header) {
+            if (!confirm('确定要删除此列吗？')) return;
+            const index = Array.from(header.parentElement.children).indexOf(header);
+            const table = header.closest('table');
+            const rows = table.querySelectorAll('tr');
+            rows.forEach(row => {
+                row.children[index].remove();
+            });
+        }
+
+        // 修改创建列菜单函数，添加默认选项
+        function createColumnMenu(header) {
+            const menu = document.createElement('div');
+            menu.className = 'column-menu';
+            
+            // 编辑列选项
+            const editItem = document.createElement('div');
+            editItem.className = 'column-menu-item has-submenu';
+            editItem.textContent = '编辑列';
+            
+            // 创建编辑子菜单
+            const editMenu = createEditSubmenu(header);
+            editItem.appendChild(editMenu);
+            
+            // 隐藏列选项
+            const hideItem = document.createElement('div');
+            hideItem.className = 'column-menu-item';
+            hideItem.textContent = '隐藏列';
+            hideItem.onclick = () => hideColumn(header);
+            
+            // 删除列选项
+            const deleteItem = document.createElement('div');
+            deleteItem.className = 'column-menu-item';
+            deleteItem.textContent = '删除列';
+            deleteItem.onclick = () => deleteColumn(header);
+            
+            menu.appendChild(editItem);
+            menu.appendChild(hideItem);
+            menu.appendChild(deleteItem);
+            
+            return menu;
+        }
+
+        // 修改创建编辑子菜单函数
+        function createEditSubmenu(header) {
+            const editMenu = document.createElement('div');
+            editMenu.className = 'column-edit-menu';
+            
+            // 获取当前列的索引
+            const columnIndex = Array.from(header.parentElement.children).indexOf(header);
+            
+            // 列标题输入
+            const titleGroup = document.createElement('div');
+            titleGroup.className = 'edit-form-group';
+            const headerText = header.textContent.replace(/[+▼]/, '').trim();
+            titleGroup.innerHTML = `
+                <label>列标题</label>
+                <input type="text" value="${headerText}" onchange="updateColumnTitle(this)">
+            `;
+            
+            // 列类型选择
+            const typeGroup = document.createElement('div');
+            typeGroup.className = 'edit-form-group';
+            typeGroup.innerHTML = `
+                <label>列类型</label>
+                <select onchange="updateColumnType(this, ${columnIndex})">
+                    <option value="text">文本</option>
+                    <option value="number">数字</option>
+                </select>
+            `;
+
+            // 选项按钮
+            const optionsGroup = document.createElement('div');
+            optionsGroup.className = 'edit-form-group';
+            optionsGroup.innerHTML = `
+                <button onclick="showOptionsDialog(${columnIndex})" style="width: 100%;">
+                    管理选项
+                </button>
+            `;
+            
+            editMenu.appendChild(titleGroup);
+            editMenu.appendChild(typeGroup);
+            editMenu.appendChild(optionsGroup);
+            
+            return editMenu;
+        }
+
+        // 修改选项弹窗相关函数
+        function showOptionsDialog(columnIndex) {
+            // 创建弹窗和遮罩
+            const overlay = document.createElement('div');
+            overlay.className = 'options-dialog-overlay';
+            
+            const dialog = document.createElement('div');
+            dialog.className = 'options-dialog';
+            
+            // 获取现有选项
+            const options = JSON.parse(localStorage.getItem(`column_${columnIndex}_options`) || '[]');
+            
+            dialog.innerHTML = `
+                <h3>管理选项</h3>
+                <div class="options-list">
+                    ${options.map(option => `
+                        <div class="column-option-item">
+                            <input type="text" value="${option}">
+                            <button onclick="removeOptionInDialog(this)">删除</button>
+                        </div>
+                    `).join('')}
+                </div>
+                <button type="button" onclick="addOptionInDialog()" class="add-option-btn">
+                    <span style="margin-right: 8px;">+</span>添加选项
+                </button>
+                <div class="dialog-buttons">
+                    <button onclick="saveOptions(${columnIndex})" class="save-btn">保存</button>
+                    <button onclick="closeOptionsDialog()">取消</button>
+                </div>
+            `;
+            
+            document.body.appendChild(overlay);
+            document.body.appendChild(dialog);
+            
+            overlay.style.display = 'block';
+            dialog.style.display = 'block';
+        }
+
+        // 添加选项函数
+        function addOptionInDialog() {
+            const optionsList = document.querySelector('.options-dialog .options-list');
+            const optionItem = document.createElement('div');
+            optionItem.className = 'column-option-item';
+            optionItem.innerHTML = `
+                <input type="text" placeholder="输入选项">
+                <button onclick="removeOptionInDialog(this)">删除</button>
+            `;
+            optionsList.appendChild(optionItem);
+            optionItem.querySelector('input').focus();
+        }
+
+        // 删除选项函数
+        function removeOptionInDialog(button) {
+            button.closest('.column-option-item').remove();
+        }
+
+        // 关闭弹窗函数
+        function closeOptionsDialog() {
+            document.querySelector('.options-dialog-overlay')?.remove();
+            document.querySelector('.options-dialog')?.remove();
+        }
+
+        // 添加保存选项函数
+        function saveOptions(columnIndex) {
+            const dialog = document.querySelector('.options-dialog');
+            const options = Array.from(dialog.querySelectorAll('.column-option-item input'))
+                .map(input => input.value.trim())
+                .filter(value => value !== '');
+            
+            localStorage.setItem(`column_${columnIndex}_options`, JSON.stringify(options));
+            closeOptionsDialog();
+        }
+
+        // 添加单元格编辑功能
+        function initializeCellEditing() {
+            const tbody = document.querySelector('.scene-table tbody');
+            
+            // 点击或输入事件处理
+            tbody.addEventListener('click', handleCellEdit);
+            tbody.addEventListener('input', handleCellEdit);
+        }
+
+        function handleCellEdit(e) {
+            const cell = e.target.closest('td');
+            if (!cell || cell.parentElement.firstElementChild === cell) return;
+
+            const columnIndex = Array.from(cell.parentElement.children).indexOf(cell);
+            const options = JSON.parse(localStorage.getItem(`column_${columnIndex}_options`) || '[]');
+            
+            if (options.length > 0) {
+                const inputText = cell.textContent.toLowerCase();
+                const matchingOptions = options.filter(opt => 
+                    opt.toLowerCase().includes(inputText)
+                );
+                
+                if (e.type === 'click' || matchingOptions.length > 0) {
+                    showCellOptionsDropdown(cell, e.type === 'click' ? options : matchingOptions);
+                } else {
+                    document.querySelector('.cell-options-dropdown')?.remove();
+                }
+            }
+        }
+
+        // 修改显示选项下拉菜单函数
+        function showCellOptionsDropdown(cell, options) {
+            // 移除现有的下拉菜单
+            document.querySelectorAll('.cell-options-dropdown').forEach(el => el.remove());
+            
+            const dropdown = document.createElement('div');
+            dropdown.className = 'cell-options-dropdown';
+            dropdown.innerHTML = options.map(option => `
+                <div class="cell-option-item">${option}</div>
+            `).join('');
+            
+            // 定位下拉菜单
+            const rect = cell.getBoundingClientRect();
+            dropdown.style.position = 'fixed';
+            dropdown.style.top = `${rect.bottom}px`;
+            dropdown.style.left = `${rect.left}px`;
+            dropdown.style.minWidth = `${rect.width}px`;
+            
+            document.body.appendChild(dropdown);
+
+            // 为选项添加点击事件
+            dropdown.querySelectorAll('.cell-option-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    cell.textContent = item.textContent;
+                    cell.dispatchEvent(new Event('change', { bubbles: true }));
+                    dropdown.remove();
+                });
+            });
+
+            // 点击其他地方关闭下拉菜单
+            document.addEventListener('click', function closeDropdown(e) {
+                if (!e.target.closest('.cell-options-dropdown') && !e.target.closest('td')) {
+                    dropdown.remove();
+                    document.removeEventListener('click', closeDropdown);
+                }
+            });
+        }
+
+        // 修改列拖动相关函数
+        function handleColumnDrop(e) {
+            e.preventDefault();
+            const draggingHeader = document.querySelector('th.dragging');
+            const targetHeader = e.target.closest('th');
+            
+            if (!draggingHeader || !targetHeader) return;
+            
+            const table = document.querySelector('.scene-table');
+            const draggingIndex = Array.from(draggingHeader.parentElement.children).indexOf(draggingHeader);
+            const targetIndex = Array.from(targetHeader.parentElement.children).indexOf(targetHeader);
+            
+            if (draggingIndex !== targetIndex) {
+                // 移动所有行的对应列
+                const rows = table.querySelectorAll('tr');
+                rows.forEach(row => {
+                    const cells = Array.from(row.children);
+                    const draggingCell = cells[draggingIndex];
+                    const targetCell = cells[targetIndex];
+                    
+                    if (draggingIndex < targetIndex) {
+                        targetCell.after(draggingCell);
+                    } else {
+                        targetCell.before(draggingCell);
+                    }
+                });
+
+                // 更新选项的存储位置
+                const draggingOptions = JSON.parse(localStorage.getItem(`column_${draggingIndex}_options`) || '[]');
+                const targetOptions = JSON.parse(localStorage.getItem(`column_${targetIndex}_options`) || '[]');
+                
+                localStorage.setItem(`column_${draggingIndex}_options`, JSON.stringify(targetOptions));
+                localStorage.setItem(`column_${targetIndex}_options`, JSON.stringify(draggingOptions));
+            }
+            
+            targetHeader.classList.remove('drag-over');
+        }
+
+        // 添加历史模板相关函数
+        function toggleTemplateList(button) {
+            const dropdown = button.parentElement;
+            dropdown.classList.toggle('active');
+        }
+
+        // 保存模板
+        function saveTable() {
+            const table = document.querySelector('.scene-table');
+            const data = [];
+            
+            // 获取表头
+            const headers = [];
+            table.querySelectorAll('thead th').forEach(th => {
+                headers.push(th.textContent.trim());
+            });
+            
+            // 获取表格数据
+            table.querySelectorAll('tbody tr').forEach(tr => {
+                const row = {};
+                tr.querySelectorAll('td').forEach((td, index) => {
+                    row[headers[index]] = td.textContent.trim();
+                });
+                data.push(row);
+            });
+            
+            // 创建模板对象
+            const template = {
+                name: `模板 ${new Date().toLocaleString()}`,
+                date: new Date().toISOString(),
+                data: data
+            };
+
+            // 获取现有模板
+            let templates = JSON.parse(localStorage.getItem('sceneTemplates') || '[]');
+            
+            // 添加新模板
+            templates.unshift(template);
+            
+            // 保存到 localStorage
+            localStorage.setItem('sceneTemplates', JSON.stringify(templates));
+            
+            // 更新模板列表显示
+            updateTemplateList();
+            
+            alert('保存成功！');
+        }
+
+        // 更新模板列表
+        function updateTemplateList() {
+            const templateList = document.getElementById('templateList');
+            const templates = JSON.parse(localStorage.getItem('sceneTemplates') || '[]');
+            
+            templateList.innerHTML = templates.map((template, index) => `
+                <div class="template-list-item">
+                    <div class="template-info">
+                        <div class="template-name">${template.name}</div>
+                        <div class="template-date">${new Date(template.date).toLocaleString()}</div>
+                    </div>
+                    <div class="template-actions">
+                        <button onclick="loadTemplate(${index})">使用</button>
+                        <button onclick="deleteTemplate(${index})">删除</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 加载模板
+        function loadTemplate(index) {
+            const templates = JSON.parse(localStorage.getItem('sceneTemplates') || '[]');
+            const template = templates[index];
+            
+            if (!template) return;
+            
+            const tbody = document.querySelector('.scene-table tbody');
+            tbody.innerHTML = '';
+            
+            template.data.forEach((row, rowIndex) => {
+                const tr = document.createElement('tr');
+                tr.draggable = true;
+                addDragEvents(tr);
+                
+                Object.values(row).forEach((value, colIndex) => {
+                    const td = document.createElement('td');
+                    td.textContent = value;
+                    td.contentEditable = colIndex !== 0;
+                    tr.appendChild(td);
+                });
+                
+                tbody.appendChild(tr);
+            });
+            
+            // 关闭模板列表
+            document.querySelector('.dropdown.active')?.classList.remove('active');
+        }
+
+        // 删除模板
+        function deleteTemplate(index) {
+            if (!confirm('确定要删除这个模板吗？')) return;
+            
+            let templates = JSON.parse(localStorage.getItem('sceneTemplates') || '[]');
+            templates.splice(index, 1);
+            localStorage.setItem('sceneTemplates', JSON.stringify(templates));
+            
+            updateTemplateList();
+        }
+
+        // 在页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeInsertButtons();
+            initializeDragAndDrop();
+            initializeColumnButtons();
+            updateTemplateList();
+            showTab(0);
+            initializeCellEditing();
+        });
+
+        // 自动保存功能
+        document.querySelector('.scene-table').addEventListener('input', function(e) {
+            if(e.target.matches('td[contenteditable="true"]')) {
+                // 这里可以添加自动保存逻辑
+                console.log('内容已更新:', e.target.textContent);
+            }
+        });
+
+        // 修改导出PDF函数
+        function exportToPDF() {
+            // 创建一个临时的表格副本，用于导出
+            const originalTable = document.querySelector('.scene-table');
+            const tempTable = originalTable.cloneNode(true);
+            
+            // 移除表格中的按钮和编辑功能
+            tempTable.querySelectorAll('.insert-column-btn').forEach(btn => btn.remove());
+            tempTable.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
+            
+            // 添加基本的PDF样式
+            tempTable.style.width = '100%';
+            tempTable.style.borderCollapse = 'collapse';
+            tempTable.querySelectorAll('th, td').forEach(cell => {
+                cell.style.border = '1px solid #000';
+                cell.style.padding = '8px';
+                cell.style.textAlign = 'left';
+            });
+
+            // 创建一个临时容器
+            const container = document.createElement('div');
+            container.appendChild(tempTable);
+            
+            // PDF配置选项
+            const opt = {
+                margin: 10,
+                filename: '分镜表.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { 
+                    scale: 2,
+                    useCORS: true,
+                    logging: true
+                },
+                jsPDF: { 
+                    unit: 'mm', 
+                    format: 'a4', 
+                    orientation: 'landscape'
+                }
+            };
+
+            // 执行PDF导出
+            html2pdf().from(container).set(opt).save().then(() => {
+                // 清理临时元素
+                container.remove();
+            }).catch(err => {
+                console.error('PDF导出失败:', err);
+                alert('PDF导出失败，请稍后重试');
+            });
+        }
+
+        // 修改导出为Excel的函数
+        function exportToExcel() {
+            const table = document.querySelector('.scene-table');
+            const data = [];
+            
+            // 获取表头（排除插入按钮）
+            const headers = [];
+            table.querySelectorAll('thead th').forEach(th => {
+                // 获取纯文本内容，去除按钮等元素
+                const text = th.cloneNode(true);
+                text.querySelectorAll('button').forEach(btn => btn.remove());
+                headers.push(text.textContent.trim());
+            });
+            
+            // CSV的表头行
+            let csvContent = "\uFEFF"; // 添加BOM，解决中文乱码
+            csvContent += headers.map(header => `"${header}"`).join(",") + "\n";
+            
+            // 获取数据行
+            table.querySelectorAll('tbody tr').forEach(tr => {
+                const rowData = [];
+                tr.querySelectorAll('td').forEach(td => {
+                    // 处理单元格内容，确保特殊字符不会破坏CSV格式
+                    const cellContent = td.textContent.trim();
+                    // 将内容包裹在引号中，处理内容中的引号
+                    const escapedContent = cellContent.replace(/"/g, '""');
+                    rowData.push(`"${escapedContent}"`);
+                });
+                csvContent += rowData.join(",") + "\n";
+            });
+            
+            // 创建Blob对象
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            
+            // 创建下载链接
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", "分镜表.csv");
+            document.body.appendChild(link);
+            
+            // 触发下载
+            link.click();
+            
+            // 清理
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        // 添加选择行的功能
+        function toggleRowSelection(button) {
+            button.classList.toggle('selected');
+            const row = button.parentElement;
+            row.classList.toggle('selected-row');
+            updateSelectionStatus();
+        }
+
+        // 修改更新选择状态函数
+        function updateSelectionStatus() {
+            const selectedRows = document.querySelectorAll('.scene-table tbody tr.selected-row');
+            const bottomActions = document.querySelector('.bottom-actions');
+            const selectionInfo = bottomActions.querySelector('.selection-info');
+            
+            if (selectedRows.length > 0) {
+                bottomActions.classList.add('show');
+                selectionInfo.textContent = `已选中 ${selectedRows.length} 个项目`;
+            } else {
+                bottomActions.classList.remove('show');
+            }
+        }
+
+        // 插入镜头
+        function insertShot() {
+            const selectedRow = document.querySelector('.scene-table tbody tr.selected-row');
+            if (selectedRow) {
+                const index = Array.from(selectedRow.parentElement.children).indexOf(selectedRow);
+                addNewRow(index);
+            }
+        }
+
+        // 移动镜头
+        function moveShot() {
+            // 这里添加移动镜头的逻辑
+            alert('移动镜头功能待实现');
+        }
+
+        // 复制镜头
+        function copyShot() {
+            const selectedRows = document.querySelectorAll('.scene-table tbody tr.selected-row');
+            selectedRows.forEach(row => {
+                const newRow = row.cloneNode(true);
+                row.parentElement.insertBefore(newRow, row.nextSibling);
+                addDragEvents(newRow);
+                initializeRowButtons(newRow);
+            });
+            updateRowNumbers();
+        }
+
+        // 删除镜头
+        function deleteShot() {
+            if (!confirm('确定要删除选中的镜头吗？')) return;
+            
+            const selectedRows = document.querySelectorAll('.scene-table tbody tr.selected-row');
+            selectedRows.forEach(row => row.remove());
+            updateRowNumbers();
+            cancelSelection();
+        }
+
+        // 取消选择
+        function cancelSelection() {
+            document.querySelectorAll('.scene-table tbody tr.selected-row').forEach(row => {
+                row.classList.remove('selected-row');
+                row.querySelector('.select-row-btn').classList.remove('selected');
+            });
+            updateSelectionStatus();
+        }
+
+        // 初始化行按钮
+        function initializeRowButtons(row) {
+            // 添加选择按钮
+            const selectBtn = document.createElement('button');
+            selectBtn.className = 'select-row-btn';
+            selectBtn.innerHTML = '✓';
+            selectBtn.onclick = (e) => {
+                e.stopPropagation();
+                toggleRowSelection(selectBtn);
+            };
+            row.appendChild(selectBtn);
+        }
+
+        // 向前插入镜头
+        function insertShotBefore() {
+            const selectedRow = document.querySelector('.scene-table tbody tr.selected-row');
+            if (selectedRow) {
+                const index = Array.from(selectedRow.parentElement.children).indexOf(selectedRow);
+                addNewRow(index - 1);
+            }
+        }
+
+        // 向后插入镜头
+        function insertShotAfter() {
+            const selectedRow = document.querySelector('.scene-table tbody tr.selected-row');
+            if (selectedRow) {
+                const index = Array.from(selectedRow.parentElement.children).indexOf(selectedRow);
+                addNewRow(index);
+            }
+        }
+
+        // 移动到最前面
+        function moveShotToFront() {
+            const selectedRow = document.querySelector('.scene-table tbody tr.selected-row');
+            if (selectedRow) {
+                const tbody = selectedRow.parentElement;
+                tbody.insertBefore(selectedRow, tbody.firstChild);
+                updateRowNumbers();
+            }
+        }
+
+        // 显示移动位置对话框
+        function moveShotToPosition() {
+            document.querySelector('.move-dialog-overlay').style.display = 'block';
+            document.querySelector('.move-dialog').style.display = 'block';
+            document.getElementById('targetPosition').value = '';
+            document.getElementById('targetPosition').focus();
+        }
+
+        // 关闭对话框
+        function closeDialog() {
+            document.querySelector('.move-dialog-overlay').style.display = 'none';
+            document.querySelector('.move-dialog').style.display = 'none';
+        }
+
+        // 确认移动
+        function confirmMove() {
+            const targetPosition = parseInt(document.getElementById('targetPosition').value);
+            const tbody = document.querySelector('.scene-table tbody');
+            const rows = tbody.children;
+            const selectedRow = document.querySelector('.scene-table tbody tr.selected-row');
+            
+            if (targetPosition && selectedRow && targetPosition > 0 && targetPosition <= rows.length) {
+                const targetRow = rows[targetPosition - 1];
+                tbody.insertBefore(selectedRow, targetRow.nextSibling);
+                updateRowNumbers();
+                closeDialog();
+            } else {
+                alert('请输入有效的镜号！');
+            }
+        }
+
+        // 移动到最后面
+        function moveShotToEnd() {
+            const selectedRow = document.querySelector('.scene-table tbody tr.selected-row');
+            if (selectedRow) {
+                const tbody = selectedRow.parentElement;
+                tbody.appendChild(selectedRow);
+                updateRowNumbers();
+            }
+        }
+
+        // 添加子菜单切换功能
+        document.querySelectorAll('.has-submenu > button').forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.stopPropagation();
+                // 关闭其他打开的子菜单
+                document.querySelectorAll('.has-submenu.active').forEach(menu => {
+                    if (menu !== button.parentElement) {
+                        menu.classList.remove('active');
+                    }
+                });
+                // 切换当前子菜单
+                button.parentElement.classList.toggle('active');
+            });
+        });
+
+        // 点击其他地方时关闭子菜单
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.has-submenu')) {
+                document.querySelectorAll('.has-submenu.active').forEach(menu => {
+                    menu.classList.remove('active');
+                });
+            }
+        });
+
+        // 修改初始化列拖动函数
+        function initializeColumnDrag() {
+            const headers = document.querySelectorAll('.scene-table th');
+            headers.forEach(header => {
+                header.setAttribute('draggable', 'true');
+                header.addEventListener('dragstart', handleColumnDragStart);
+                header.addEventListener('dragend', handleColumnDragEnd);
+                header.addEventListener('dragover', handleColumnDragOver);
+                header.addEventListener('drop', handleColumnDrop);
+            });
+        }
+
+        // 在初始化时调用列拖动功能
+        document.addEventListener('DOMContentLoaded', function() {
+            // ... existing initialization code ...
+            initializeColumnDrag();
+        });
+
+        // 修改列拖动相关函数
+        function handleColumnDragStart(e) {
+            this.classList.add('dragging');
+            e.dataTransfer.setData('text/plain', this.cellIndex);
+        }
+
+        function handleColumnDragEnd(e) {
+            this.classList.remove('dragging');
+        }
+
+        function handleColumnDragOver(e) {
+            e.preventDefault();
+            const draggingHeader = document.querySelector('th.dragging');
+            if (!draggingHeader) return;
+
+            const currentHeader = e.target.closest('th');
+            if (currentHeader && currentHeader !== draggingHeader) {
+                const headers = Array.from(currentHeader.parentElement.children);
+                const draggingIndex = headers.indexOf(draggingHeader);
+                const targetIndex = headers.indexOf(currentHeader);
+
+                if (draggingIndex !== targetIndex) {
+                    headers.forEach(h => h.classList.remove('drag-over'));
+                    currentHeader.classList.add('drag-over');
+                }
+            }
+        }
+
+        function handleColumnDrop(e) {
+            e.preventDefault();
+            const draggingHeader = document.querySelector('th.dragging');
+            const targetHeader = e.target.closest('th');
+            
+            if (!draggingHeader || !targetHeader) return;
+            
+            const table = document.querySelector('.scene-table');
+            const draggingIndex = Array.from(draggingHeader.parentElement.children).indexOf(draggingHeader);
+            const targetIndex = Array.from(targetHeader.parentElement.children).indexOf(targetHeader);
+            
+            if (draggingIndex !== targetIndex) {
+                // 移动所有行的对应列
+                const rows = table.querySelectorAll('tr');
+                rows.forEach(row => {
+                    const cells = Array.from(row.children);
+                    const draggingCell = cells[draggingIndex];
+                    const targetCell = cells[targetIndex];
+                    
+                    if (draggingIndex < targetIndex) {
+                        targetCell.after(draggingCell);
+                    } else {
+                        targetCell.before(draggingCell);
+                    }
+                });
+
+                // 更新选项的存储位置
+                const draggingOptions = JSON.parse(localStorage.getItem(`column_${draggingIndex}_options`) || '[]');
+                const targetOptions = JSON.parse(localStorage.getItem(`column_${targetIndex}_options`) || '[]');
+                
+                localStorage.setItem(`column_${draggingIndex}_options`, JSON.stringify(targetOptions));
+                localStorage.setItem(`column_${targetIndex}_options`, JSON.stringify(draggingOptions));
+            }
+            
+            targetHeader.classList.remove('drag-over');
+        }
+    </script>
+
+</body>
+</html>
