@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>视频制作管理</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -206,9 +208,7 @@
 
         /* 空单元格样式 */
         .scene-table td[contenteditable="true"]:empty::before {
-            content: "点击编辑";
-            color: #999;
-            font-style: italic;
+            content: "";  /* 移除"点击编辑"提示文字 */
         }
 
         /* 添加拖拽相关样式 */
@@ -928,6 +928,442 @@
         .options-dialog .add-option-btn:hover {
             background-color: #f0f7ff;
         }
+
+        /* 选择菜单样式 */
+        .select-menu {
+            position: relative;
+            display: inline-block;
+        }
+
+        .select-menu button {
+            background: #ffffff;
+            border: 1px solid #e1e8ed;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            color: #536171;
+        }
+
+        .select-menu button:hover {
+            background-color: #f8fafc;
+            color: #3498db;
+        }
+
+        .select-menu .submenu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: #ffffff;
+            border: 1px solid #e1e8ed;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: none;
+            z-index: 1000;
+            min-width: 120px;
+        }
+
+        .select-menu .submenu.active {
+            display: block;
+        }
+
+        .select-menu .submenu button {
+            display: block;
+            width: 100%;
+            text-align: left;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 0;
+        }
+
+        .select-menu .submenu button:hover {
+            background-color: #f0f7ff;
+        }
+
+        /* 修改表格列宽样式 */
+        .scene-table th:nth-child(1), /* 排序 */
+        .scene-table td:nth-child(1) {
+            width: 35px;  /* 原50px减少30% */
+            min-width: 35px;
+            max-width: 35px;
+        }
+
+        .scene-table th:nth-child(2), /* 镜号 */
+        .scene-table td:nth-child(2) {
+            width: 56px;  /* 原80px减少30% */
+            min-width: 56px;
+            max-width: 56px;
+        }
+
+        .scene-table th:nth-child(5), /* 景别 */
+        .scene-table td:nth-child(5) {
+            width: 70px;  /* 原100px减少30% */
+            min-width: 70px;
+            max-width: 70px;
+        }
+
+        .scene-table th:nth-child(7), /* 时长(秒) */
+        .scene-table td:nth-child(7) {
+            width: 56px;  /* 原80px减少30% */
+            min-width: 56px;
+            max-width: 56px;
+        }
+
+        /* 扩大其他列的宽度 */
+        .scene-table th:nth-child(3), /* 场景预期 */
+        .scene-table td:nth-child(3),
+        .scene-table th:nth-child(4), /* 摄像机角度 */
+        .scene-table td:nth-child(4),
+        .scene-table th:nth-child(6), /* 拍摄手法 */
+        .scene-table td:nth-child(6),
+        .scene-table th:nth-child(8), /* 内容 */
+        .scene-table td:nth-child(8),
+        .scene-table th:nth-child(9), /* 台词 */
+        .scene-table td:nth-child(9),
+        .scene-table th:nth-child(10), /* 备注 */
+        .scene-table td:nth-child(10) {
+            width: 160px;  /* 原来是200px，减少20% */
+            min-width: 160px;
+        }
+
+        /* 表格内容居中 */
+        .scene-table th,
+        .scene-table td {
+            text-align: center !important;  /* 使用!important确保覆盖其他样式 */
+            vertical-align: middle;
+        }
+
+        /* 空单元格样式居中 */
+        .scene-table td[contenteditable="true"]:empty::before {
+            text-align: center;
+            width: 100%;
+            display: block;
+        }
+
+        /* 确保表格可以横向滚动 */
+        .table-container {
+            overflow-x: auto;
+            margin-right: 40px;  /* 为选择按钮留出空间 */
+        }
+
+        /* 添加分镜设置菜单样式 */
+        .scene-settings-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: #ffffff;
+            border: 1px solid #e1e8ed;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: none;
+            z-index: 1000;
+            min-width: 150px;
+        }
+
+        .scene-settings-menu.active {
+            display: block;
+        }
+
+        .scene-settings-menu button {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 8px 16px;
+            border: none;
+            background: none;
+            color: #536171;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .scene-settings-menu button:hover {
+            background-color: #f0f7ff;
+            color: #3498db;
+        }
+
+        /* 添加文字大小子菜单样式 */
+        .submenu-item {
+            position: relative;
+        }
+
+        .font-size-submenu {
+            position: absolute;
+            left: 100%;
+            top: 0;
+            background: #ffffff;
+            border: 1px solid #e1e8ed;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: none;
+            min-width: 100px;
+        }
+
+        .submenu-item:hover .font-size-submenu {
+            display: block;
+        }
+
+        /* 表格文字大小类 */
+        .scene-table.font-size-large td,
+        .scene-table.font-size-large th {
+            font-size: 16px;
+        }
+
+        .scene-table.font-size-small td,
+        .scene-table.font-size-small th {
+            font-size: 12px;
+        }
+
+        /* 修改表格文字大小类，添加过渡效果 */
+        .scene-table td,
+        .scene-table th {
+            transition: font-size 0.3s ease;  /* 添加平滑过渡效果 */
+        }
+
+        .scene-table.font-size-xxl td, /* 超级大 */
+        .scene-table.font-size-xxl th {
+            font-size: 22px;
+        }
+
+        .scene-table.font-size-xl-plus td, /* 特大 */
+        .scene-table.font-size-xl-plus th {
+            font-size: 21px;
+        }
+
+        .scene-table.font-size-xl td, /* 超大 */
+        .scene-table.font-size-xl th {
+            font-size: 20.5px;
+        }
+
+        .scene-table.font-size-large td, /* 大 */
+        .scene-table.font-size-large th {
+            font-size: 20.25px;
+        }
+
+        .scene-table.font-size-normal td, /* 正常 */
+        .scene-table.font-size-normal th {
+            font-size: 20px;
+        }
+
+        .scene-table.font-size-small td, /* 小 */
+        .scene-table.font-size-small th {
+            font-size: 18px;
+        }
+
+        .scene-table.font-size-xs td, /* 超小 */
+        .scene-table.font-size-xs th {
+            font-size: 16px;
+        }
+
+        /* 添加镜号设置子菜单样式 */
+        .scene-number-submenu {
+            position: absolute;
+            left: 100%;
+            top: 0;
+            background: #ffffff;
+            border: 1px solid #e1e8ed;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: none;
+            min-width: 150px;
+        }
+
+        .submenu-item:hover .scene-number-submenu {
+            display: block;
+        }
+
+        /* 自定义镜号开关样式 */
+        .toggle-switch {
+            display: inline-flex;
+            align-items: center;
+            cursor: pointer;
+            padding: 8px 16px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .toggle-switch:hover {
+            background-color: #f0f7ff;
+            color: #3498db;
+        }
+
+        .toggle-switch input {
+            display: none;
+        }
+
+        .toggle-slider {
+            position: relative;
+            width: 40px;
+            height: 20px;
+            background-color: #ccc;
+            border-radius: 20px;
+            margin-left: auto;
+            transition: background-color 0.3s ease;
+        }
+
+        .toggle-slider:before {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background-color: white;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s ease;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background-color: #3498db;
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+        }
+
+        /* 添加PDF预览设置弹窗样式 */
+        .pdf-preview-dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1001;
+            display: none;
+            width: 800px;
+        }
+
+        .pdf-settings {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .pdf-setting-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pdf-setting-item label {
+            color: #536171;
+            white-space: nowrap;
+        }
+
+        .pdf-setting-item select,
+        .pdf-setting-item input {
+            padding: 6px 12px;
+            border: 1px solid #e1e8ed;
+            border-radius: 4px;
+            background: #fff;
+            min-width: 100px;
+        }
+
+        .pdf-setting-item input[type="color"] {
+            padding: 2px;
+            width: 40px;
+            height: 30px;
+            cursor: pointer;
+        }
+
+        .logo-upload {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-preview {
+            width: 40px;
+            height: 40px;
+            border: 1px dashed #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .pdf-preview-dialog .dialog-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .pdf-preview-dialog button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .pdf-preview-dialog button.confirm {
+            background: #3498db;
+            color: white;
+        }
+
+        .pdf-preview-dialog button.cancel {
+            background: #eee;
+            color: #333;
+        }
+
+        /* 添加PDF预览画面样式 */
+        .pdf-preview-container {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+            min-height: 500px;
+        }
+
+        .pdf-settings-panel {
+            flex: 0 0 300px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .pdf-preview-panel {
+            flex: 1;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            overflow: auto;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .preview-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .preview-table th,
+        .preview-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .preview-table th {
+            background: #f8f9fa;
+        }
+
+        .preview-logo {
+            max-width: 100px;
+            margin-bottom: 20px;
+        }
+
+        /* 修改弹窗样式以适应预览 */
+        .pdf-preview-dialog {
+            width: 90%;
+            max-width: 1200px;
+            height: 80vh;
+            overflow: auto;
+        }
     </style>
 </head>
 <body>
@@ -960,20 +1396,50 @@
                     <span class="button-icon">📥</span>导出
                 </button>
                 <div class="dropdown-content">
-                    <button onclick="exportToPDF()">导出为 PDF</button>
                     <button onclick="exportToExcel()">导出为 Excel</button>
+                    <button onclick="exportToPDF()">导出为 PDF</button>
                 </div>
             </div>
         </div>
 
         <p>这里可以添加分镜制作的详细内容。</p>
 
-        <!-- 工具栏 -->
+        <!-- 修改工具栏部分的HTML -->
         <div class="toolbar">
             <button onclick="toggleNewSceneOptions()">新建</button>
             <button onclick="toggleBatchMode()">批量模式</button>
-            <button onclick="toggleSelection()">选择</button>
-            <button onclick="openSceneSettings()">分镜设置</button>
+            <div class="select-menu">
+                <button onclick="toggleSubmenu(this)">选择 ▼</button>
+                <div class="submenu">
+                    <button onclick="selectEmptyRows()">选中空镜头</button>
+                    <button onclick="selectAllRows()">全选</button>
+                    <button onclick="cancelSelection()">取消选择</button>
+                </div>
+            </div>
+            <div class="select-menu">
+                <button onclick="toggleSceneSettings(this)">分镜设置 ▼</button>
+                <div class="scene-settings-menu">
+                    <div class="submenu-item">
+                        <button onclick="toggleFontSizeMenu(this)">文字大小 ›</button>
+                        <div class="font-size-submenu">
+                            <button onclick="changeFontSize('large')">大</button>
+                            <button onclick="changeFontSize('small')">小</button>
+                        </div>
+                    </div>
+                    <button onclick="openImageRatioSettings()">图片比例</button>
+                    <button onclick="openImageFitSettings()">图片适配</button>
+                    <div class="submenu-item">
+                        <button onclick="toggleSceneNumberMenu(this)">镜号设置 ›</button>
+                        <div class="scene-number-submenu">
+                            <label class="toggle-switch">
+                                自定义镜号
+                                <input type="checkbox" onchange="toggleCustomSceneNumber(this)">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <button onclick="openColumnSettings()">列设置</button>
         </div>
 
@@ -998,6 +1464,7 @@
                         <th>拍摄手法</th>
                         <th>时长(秒)</th>
                         <th>内容</th>
+                        <th>台词</th>
                         <th>备注</th>
                     </tr>
                 </thead>
@@ -1005,6 +1472,7 @@
                     <tr>
                         <td contenteditable="true">1</td>
                         <td contenteditable="true">1-1</td>
+                        <td contenteditable="true"></td>
                         <td contenteditable="true"></td>
                         <td contenteditable="true"></td>
                         <td contenteditable="true"></td>
@@ -1048,6 +1516,46 @@
             <div class="dialog-buttons">
                 <button onclick="closeDialog()" class="cancel">取消</button>
                 <button onclick="confirmMove()">确定</button>
+            </div>
+        </div>
+
+        <!-- 添加PDF预览设置弹窗 -->
+        <div class="dialog-overlay"></div>
+        <div class="pdf-preview-dialog">
+            <h3>PDF 导出设置</h3>
+            <div class="pdf-settings">
+                <div class="pdf-setting-item">
+                    <label>纸张方向</label>
+                    <select id="pdfOrientation" onchange="updatePreview()">
+                        <option value="portrait">竖向</option>
+                        <option value="landscape">横向</option>
+                    </select>
+                </div>
+                <div class="pdf-setting-item">
+                    <label>文字大小</label>
+                    <select id="pdfFontSize" onchange="updatePreview()">
+                        <option value="small">小</option>
+                        <option value="medium" selected>中</option>
+                        <option value="large">大</option>
+                    </select>
+                </div>
+                <div class="pdf-setting-item">
+                    <label>最大列数</label>
+                    <select id="pdfMaxColumns" onchange="updatePreview()">
+                        <!-- 4-20的选项会通过JavaScript动态生成 -->
+                    </select>
+                </div>
+                <div class="pdf-setting-item">
+                    <label>导航颜色</label>
+                    <input type="color" id="pdfNavColor" value="#000000" onchange="updatePreview()">
+                </div>
+            </div>
+            <div class="pdf-preview-container">
+                <div id="previewContent"></div>
+            </div>
+            <div class="dialog-buttons">
+                <button onclick="closePdfPreview()" class="cancel">取消</button>
+                <button onclick="generatePDF()" class="confirm">导出PDF</button>
             </div>
         </div>
     </div>
@@ -1100,10 +1608,12 @@
             });
         }
 
+        // 修改toggleSelection函数
         function toggleSelection() {
-            const button = event.target;
-            button.classList.toggle('active');
-            // 这里添加选择功能的具体逻辑
+            const selectMenu = document.querySelector('.select-menu button');
+            if (selectMenu) {
+                toggleSubmenu(selectMenu);
+            }
         }
 
         function openSceneSettings() {
@@ -1168,7 +1678,7 @@
             };
 
             // 创建单元格
-            for(let i = 0; i < 9; i++) {
+            for(let i = 0; i < 10; i++) {
                 const td = document.createElement('td');
                 td.contentEditable = true;
                 
@@ -1865,105 +2375,6 @@
             }
         });
 
-        // 修改导出PDF函数
-        function exportToPDF() {
-            // 创建一个临时的表格副本，用于导出
-            const originalTable = document.querySelector('.scene-table');
-            const tempTable = originalTable.cloneNode(true);
-            
-            // 移除表格中的按钮和编辑功能
-            tempTable.querySelectorAll('.insert-column-btn').forEach(btn => btn.remove());
-            tempTable.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
-            
-            // 添加基本的PDF样式
-            tempTable.style.width = '100%';
-            tempTable.style.borderCollapse = 'collapse';
-            tempTable.querySelectorAll('th, td').forEach(cell => {
-                cell.style.border = '1px solid #000';
-                cell.style.padding = '8px';
-                cell.style.textAlign = 'left';
-            });
-
-            // 创建一个临时容器
-            const container = document.createElement('div');
-            container.appendChild(tempTable);
-            
-            // PDF配置选项
-            const opt = {
-                margin: 10,
-                filename: '分镜表.pdf',
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { 
-                    scale: 2,
-                    useCORS: true,
-                    logging: true
-                },
-                jsPDF: { 
-                    unit: 'mm', 
-                    format: 'a4', 
-                    orientation: 'landscape'
-                }
-            };
-
-            // 执行PDF导出
-            html2pdf().from(container).set(opt).save().then(() => {
-                // 清理临时元素
-                container.remove();
-            }).catch(err => {
-                console.error('PDF导出失败:', err);
-                alert('PDF导出失败，请稍后重试');
-            });
-        }
-
-        // 修改导出为Excel的函数
-        function exportToExcel() {
-            const table = document.querySelector('.scene-table');
-            const data = [];
-            
-            // 获取表头（排除插入按钮）
-            const headers = [];
-            table.querySelectorAll('thead th').forEach(th => {
-                // 获取纯文本内容，去除按钮等元素
-                const text = th.cloneNode(true);
-                text.querySelectorAll('button').forEach(btn => btn.remove());
-                headers.push(text.textContent.trim());
-            });
-            
-            // CSV的表头行
-            let csvContent = "\uFEFF"; // 添加BOM，解决中文乱码
-            csvContent += headers.map(header => `"${header}"`).join(",") + "\n";
-            
-            // 获取数据行
-            table.querySelectorAll('tbody tr').forEach(tr => {
-                const rowData = [];
-                tr.querySelectorAll('td').forEach(td => {
-                    // 处理单元格内容，确保特殊字符不会破坏CSV格式
-                    const cellContent = td.textContent.trim();
-                    // 将内容包裹在引号中，处理内容中的引号
-                    const escapedContent = cellContent.replace(/"/g, '""');
-                    rowData.push(`"${escapedContent}"`);
-                });
-                csvContent += rowData.join(",") + "\n";
-            });
-            
-            // 创建Blob对象
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            
-            // 创建下载链接
-            const link = document.createElement("a");
-            const url = URL.createObjectURL(blob);
-            link.setAttribute("href", url);
-            link.setAttribute("download", "分镜表.csv");
-            document.body.appendChild(link);
-            
-            // 触发下载
-            link.click();
-            
-            // 清理
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-        }
-
         // 添加选择行的功能
         function toggleRowSelection(button) {
             button.classList.toggle('selected');
@@ -2220,7 +2631,636 @@
             
             targetHeader.classList.remove('drag-over');
         }
-    </script>
 
+        // 修改选择空镜头功能
+        function selectEmptyRows() {
+            const tbody = document.querySelector('.scene-table tbody');
+            const rows = tbody.querySelectorAll('tr');
+            
+            rows.forEach(row => {
+                // 获取所有单元格，跳过第一列（排序）和第二列（镜号）
+                const cells = Array.from(row.cells).slice(2);
+                
+                // 检查除排序和镜号外的所有单元格是否为空
+                const isEmpty = cells.every(cell => {
+                    const content = cell.textContent.trim();
+                    return content === '' || content === '点击编辑';
+                });
+                
+                if (isEmpty) {
+                    // 选中空行
+                    row.classList.add('selected-row');
+                    const selectBtn = row.querySelector('.select-row-btn');
+                    if (selectBtn) {
+                        selectBtn.classList.add('selected');
+                    }
+                }
+            });
+            
+            // 更新选择状态
+            updateSelectionStatus();
+            
+            // 关闭子菜单
+            document.querySelectorAll('.submenu.active').forEach(menu => {
+                menu.classList.remove('active');
+            });
+        }
+
+        // 修改初始化子菜单函数
+        function initializeSubmenus() {
+            const selectMenu = document.querySelector('.select-menu');
+            selectMenu.innerHTML = `
+                <button onclick="toggleSubmenu(this)">
+                    选择 ▼
+                </button>
+                <div class="submenu">
+                    <button onclick="selectEmptyRows()">选中空镜头</button>
+                    <button onclick="selectAllRows()">全选</button>
+                    <button onclick="cancelSelection()">取消选择</button>
+                </div>
+            `;
+        }
+
+        // 修改子菜单切换函数
+        function toggleSubmenu(button) {
+            const submenu = button.closest('.select-menu').querySelector('.submenu');
+            const isActive = submenu.classList.contains('active');
+            
+            // 关闭所有打开的子菜单
+            document.querySelectorAll('.submenu.active').forEach(menu => {
+                menu.classList.remove('active');
+            });
+            
+            // 如果当前子菜单未打开，则打开它
+            if (!isActive) {
+                submenu.classList.add('active');
+            }
+        }
+
+        // 添加全选功能
+        function selectAllRows() {
+            const tbody = document.querySelector('.scene-table tbody');
+            const rows = tbody.querySelectorAll('tr');
+            
+            rows.forEach(row => {
+                row.classList.add('selected-row');
+                const selectBtn = row.querySelector('.select-row-btn');
+                if (selectBtn) {
+                    selectBtn.classList.add('selected');
+                }
+            });
+            
+            updateSelectionStatus();
+        }
+
+        // 点击其他地方关闭子菜单
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.select-menu')) {
+                document.querySelectorAll('.submenu.active').forEach(menu => {
+                    menu.classList.remove('active');
+                });
+            }
+        });
+
+        // 修改表格结构，在内容和备注之间添加台词列
+        function initializeTable() {
+            const table = document.querySelector('.scene-table');
+            const thead = table.querySelector('thead');
+            const tbody = table.querySelector('tbody');
+            
+            // 修改表头行
+            const headerRow = thead.querySelector('tr');
+            const contentHeader = headerRow.querySelector('th:nth-child(4)'); // 假设"内容"是第4列
+            
+            // 创建台词列表头
+            const scriptHeader = document.createElement('th');
+            scriptHeader.textContent = '台词';
+            scriptHeader.contentEditable = true;
+            scriptHeader.setAttribute('draggable', 'true');
+            
+            // 在内容列后插入台词列
+            contentHeader.after(scriptHeader);
+            
+            // 为所有现有行添加台词单元格
+            tbody.querySelectorAll('tr').forEach(row => {
+                const contentCell = row.querySelector('td:nth-child(4)');
+                const scriptCell = document.createElement('td');
+                scriptCell.contentEditable = true;
+                contentCell.after(scriptCell);
+            });
+            
+            // 初始化列按钮
+            initializeColumnButtons();
+        }
+
+        // 添加分镜设置相关函数
+        function toggleSceneSettings(button) {
+            const menu = button.nextElementSibling;
+            const isActive = menu.classList.contains('active');
+            
+            // 关闭所有打开的菜单
+            document.querySelectorAll('.scene-settings-menu.active, .submenu.active').forEach(m => {
+                m.classList.remove('active');
+            });
+            
+            // 如果当前菜单未打开，则打开它
+            if (!isActive) {
+                menu.classList.add('active');
+            }
+        }
+
+        function openTextSizeSettings() {
+            alert('文字大小设置功能待实现');
+            closeAllMenus();
+        }
+
+        function openImageRatioSettings() {
+            alert('图片比例设置功能待实现');
+            closeAllMenus();
+        }
+
+        function openImageFitSettings() {
+            alert('图片适配设置功能待实现');
+            closeAllMenus();
+        }
+
+        function openSceneNumberSettings() {
+            alert('镜号设置功能待实现');
+            closeAllMenus();
+        }
+
+        function closeAllMenus() {
+            document.querySelectorAll('.scene-settings-menu.active, .submenu.active').forEach(menu => {
+                menu.classList.remove('active');
+            });
+        }
+
+        // 点击其他地方关闭菜单
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.select-menu')) {
+                closeAllMenus();
+            }
+        });
+
+        // 修改文字大小相关函数
+        function toggleFontSizeMenu(button) {
+            const submenu = button.nextElementSibling;
+            const isActive = submenu.style.display === 'block';
+            
+            // 关闭所有其他子菜单
+            document.querySelectorAll('.font-size-submenu').forEach(menu => {
+                menu.style.display = 'none';
+            });
+            
+            // 如果当前子菜单未打开，则打开它
+            if (!isActive) {
+                submenu.style.display = 'block';
+            }
+        }
+
+        // 修改字体大小
+        function changeFontSize(size) {
+            const table = document.querySelector('.scene-table');
+            const currentSize = getCurrentFontSizeLevel(table);
+            
+            // 根据当前点击的按钮和当前字体大小决定下一个字体大小
+            let nextSize;
+            if (size === 'large') {
+                switch (currentSize) {
+                    case 'normal': nextSize = 'large'; break;
+                    case 'large': nextSize = 'xl'; break;
+                    case 'xl': nextSize = 'xl-plus'; break;
+                    case 'xl-plus': nextSize = 'xxl'; break;
+                    case 'xxl': nextSize = 'xxl'; break;  // 已经是最大
+                    case 'small': nextSize = 'normal'; break;
+                    case 'xs': nextSize = 'small'; break;
+                    default: nextSize = 'large';
+                }
+            } else if (size === 'small') {
+                switch (currentSize) {
+                    case 'normal': nextSize = 'small'; break;
+                    case 'small': nextSize = 'xs'; break;
+                    case 'xs': nextSize = 'xs'; break;  // 已经是最小
+                    case 'large': nextSize = 'normal'; break;
+                    case 'xl': nextSize = 'large'; break;
+                    case 'xl-plus': nextSize = 'xl'; break;
+                    case 'xxl': nextSize = 'xl-plus'; break;
+                    default: nextSize = 'small';
+                }
+            }
+            
+            // 移除所有字体大小类
+            table.classList.remove(
+                'font-size-xxl',
+                'font-size-xl-plus',
+                'font-size-xl',
+                'font-size-large',
+                'font-size-normal',
+                'font-size-small',
+                'font-size-xs'
+            );
+            
+            // 添加新的字体大小类
+            if (nextSize) {
+                table.classList.add(`font-size-${nextSize}`);
+                // 保存字体大小设置到localStorage
+                localStorage.setItem('tableFontSize', nextSize);
+            }
+        }
+
+        // 获取当前字体大小级别
+        function getCurrentFontSizeLevel(table) {
+            if (table.classList.contains('font-size-xxl')) return 'xxl';
+            if (table.classList.contains('font-size-xl-plus')) return 'xl-plus';
+            if (table.classList.contains('font-size-xl')) return 'xl';
+            if (table.classList.contains('font-size-large')) return 'large';
+            if (table.classList.contains('font-size-small')) return 'small';
+            if (table.classList.contains('font-size-xs')) return 'xs';
+            return 'normal';  // 默认大小
+        }
+
+        // 在页面加载时恢复字体大小设置
+        document.addEventListener('DOMContentLoaded', function() {
+            const table = document.querySelector('.scene-table');
+            const savedSize = localStorage.getItem('tableFontSize');
+            
+            // 设置默认字体大小类
+            if (!savedSize) {
+                table.classList.add('font-size-normal');
+            } else {
+                table.classList.add(`font-size-${savedSize}`);
+            }
+        });
+
+        // 镜号设置相关函数
+        function toggleSceneNumberMenu(button) {
+            const submenu = button.nextElementSibling;
+            const isActive = submenu.style.display === 'block';
+            
+            // 关闭所有其他子菜单
+            document.querySelectorAll('.scene-number-submenu').forEach(menu => {
+                menu.style.display = 'none';
+            });
+            
+            // 如果当前子菜单未打开，则打开它
+            if (!isActive) {
+                submenu.style.display = 'block';
+            }
+        }
+
+        // 修改镜号设置相关函数
+        function toggleCustomSceneNumber(checkbox) {
+            const table = document.querySelector('.scene-table');
+            const sceneNumberCells = table.querySelectorAll('td:nth-child(2)');
+            
+            if (checkbox.checked) {
+                // 启用自定义镜号
+                sceneNumberCells.forEach(cell => {
+                    cell.contentEditable = true;
+                    cell.style.backgroundColor = '#f8f9fa';  // 轻微背景色表示可编辑
+                });
+                // 保存设置
+                localStorage.setItem('customSceneNumber', 'true');
+            } else {
+                // 禁用自定义镜号，恢复自动编号
+                sceneNumberCells.forEach(cell => {
+                    cell.contentEditable = false;
+                    cell.style.backgroundColor = '';
+                });
+                // 更新镜号
+                updateRowNumbers();
+                // 保存设置
+                localStorage.setItem('customSceneNumber', 'false');
+            }
+        }
+
+        // 在页面加载时初始化镜号设置为关闭状态
+        document.addEventListener('DOMContentLoaded', function() {
+            const checkbox = document.querySelector('.scene-number-submenu input[type="checkbox"]');
+            if (checkbox) {
+                // 默认设置为未选中状态
+                checkbox.checked = false;
+                
+                // 禁用自定义镜号
+                const sceneNumberCells = document.querySelectorAll('.scene-table td:nth-child(2)');
+                sceneNumberCells.forEach(cell => {
+                    cell.contentEditable = false;
+                    cell.style.backgroundColor = '';
+                });
+                
+                // 更新镜号
+                updateRowNumbers();
+                
+                // 保存默认设置
+                localStorage.setItem('customSceneNumber', 'false');
+            }
+        });
+
+        // 修改导出为Excel的函数
+        function exportToExcel() {
+            const table = document.querySelector('.scene-table');
+            const data = [];
+            
+            // 获取表头（排除插入按钮）
+            const headers = [];
+            table.querySelectorAll('thead th').forEach(th => {
+                // 获取纯文本内容，去除按钮等元素
+                const text = th.cloneNode(true);
+                text.querySelectorAll('button').forEach(btn => btn.remove());
+                headers.push(text.textContent.trim());
+            });
+            
+            // CSV的表头行
+            let csvContent = "\uFEFF"; // 添加BOM，解决中文乱码
+            csvContent += headers.map(header => `"${header}"`).join(",") + "\n";
+            
+            // 获取数据行
+            table.querySelectorAll('tbody tr').forEach(tr => {
+                const rowData = [];
+                tr.querySelectorAll('td').forEach(td => {
+                    // 处理单元格内容，确保特殊字符不会破坏CSV格式
+                    const cellContent = td.textContent.trim();
+                    // 将内容包裹在引号中，处理内容中的引号
+                    const escapedContent = cellContent.replace(/"/g, '""');
+                    rowData.push(`"${escapedContent}"`);
+                });
+                csvContent += rowData.join(",") + "\n";
+            });
+            
+            // 创建Blob对象
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            
+            // 创建下载链接
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", "分镜表.csv");
+            document.body.appendChild(link);
+            
+            // 触发下载
+            link.click();
+            
+            // 清理
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        // 修改导出PDF函数
+        function exportToPDF() {
+            const table = document.querySelector('.scene-table');
+            const clone = table.cloneNode(true);
+            
+            // 移除所有按钮和操作元素
+            clone.querySelectorAll('button, .insert-row-btn, .select-row-btn').forEach(el => el.remove());
+            
+            // 移除排序列（第一列）
+            const allRows = clone.querySelectorAll('tr');
+            allRows.forEach(row => {
+                if (row.cells.length > 0) {
+                    row.deleteCell(0); // 删除第一列
+                }
+            });
+            
+            // 创建一个临时容器
+            const container = document.createElement('div');
+            container.style.padding = '20px';
+            
+            // 添加标题（只在第一页显示）
+            const titleContainer = document.createElement('div');
+            titleContainer.style.textAlign = 'center';
+            titleContainer.style.marginBottom = '20px';
+            titleContainer.style.fontSize = '16pt';
+            titleContainer.style.fontWeight = 'bold';
+            titleContainer.style.color = '#333333';
+            titleContainer.textContent = '分镜表';
+            container.appendChild(titleContainer);
+            
+            // 获取所有行
+            const rows = Array.from(clone.querySelectorAll('tr'));
+            const headerRow = rows[0];
+            const dataRows = rows.slice(1);
+            
+            // 创建临时表格来计算实际行高
+            const tempTable = document.createElement('table');
+            tempTable.style.visibility = 'hidden';
+            tempTable.style.position = 'absolute';
+            tempTable.style.width = '100%';
+            document.body.appendChild(tempTable);
+            
+            // 修改分页相关的常量
+            const pages = [];
+            let currentPage = [];
+            let currentHeight = 0;
+            const maxPageHeight = 297; // A4纸高度297mm
+            const headerHeight = 20; // 适当减小表头高度
+            const safetyMargin = 5; // 减小安全边距
+            const minRowSpacing = 2; // 减小行间最小间距
+            
+            dataRows.forEach((row, index) => {
+                // 创建临时行来计算实际高度
+                const tempRow = row.cloneNode(true);
+                tempTable.appendChild(tempRow);
+                
+                // 获取行的实际内容高度
+                const cells = Array.from(tempRow.cells);
+                let maxCellHeight = 0;
+                
+                cells.forEach(cell => {
+                    // 克隆单元格内容到临时div以计算实际高度
+                    const tempDiv = document.createElement('div');
+                    tempDiv.style.visibility = 'hidden';
+                    tempDiv.style.position = 'absolute';
+                    tempDiv.style.width = cell.offsetWidth + 'px';
+                    tempDiv.style.padding = '8px';
+                    tempDiv.style.fontSize = '10pt';
+                    tempDiv.style.lineHeight = '1.4';
+                    tempDiv.style.whiteSpace = 'pre-wrap';
+                    tempDiv.style.wordBreak = 'break-word';
+                    tempDiv.innerHTML = cell.innerHTML;
+                    document.body.appendChild(tempDiv);
+                    
+                    const cellHeight = tempDiv.offsetHeight * 0.264583; // 转换为mm
+                    maxCellHeight = Math.max(maxCellHeight, cellHeight);
+                    
+                    document.body.removeChild(tempDiv);
+                });
+                
+                tempTable.removeChild(tempRow);
+                
+                // 计算行的总高度，包括内容、padding和边框
+                const rowHeight = maxCellHeight + 8; // 增加padding空间
+                
+                // 检查当前页剩余空间
+                const availableHeight = maxPageHeight - headerHeight - safetyMargin;
+                const remainingHeight = availableHeight - currentHeight;
+                
+                // 判断是否需要分页
+                const needNewPage = currentHeight > 0 && (
+                    // 剩余空间不足以容纳当前行加上最小间距
+                    remainingHeight < rowHeight + minRowSpacing ||
+                    // 或者是最后一行，但只有在当前页内容超过一定比例时才分页
+                    (index === dataRows.length - 1 && currentHeight > availableHeight * 0.75)
+                );
+
+                if (needNewPage) {
+                    if (currentPage.length > 0) {
+                        pages.push(currentPage);
+                        currentPage = [];
+                        currentHeight = 0;
+                    }
+                }
+                
+                // 如果当前行高度超过可用空间，且不是最后几行，单独放一页
+                if (rowHeight > availableHeight && index < dataRows.length - 3) {
+                    if (currentPage.length > 0) {
+                        pages.push(currentPage);
+                        currentPage = [];
+                        currentHeight = 0;
+                    }
+                    pages.push([row]);
+                    return;
+                }
+                
+                // 添加当前行到当前页
+                currentPage.push(row);
+                currentHeight += rowHeight + minRowSpacing;
+                
+                // 处理最后一页，确保不会出现不必要的分页
+                if (index === dataRows.length - 1 && currentPage.length > 0) {
+                    // 只有当最后一页内容超过一定高度时才作为单独的页
+                    if (currentHeight > availableHeight * 0.4) {
+                        pages.push(currentPage);
+                    } else {
+                        // 否则尝试合并到前一页
+                        const lastPage = pages[pages.length - 1] || [];
+                        pages[pages.length - 1] = [...lastPage, ...currentPage];
+                    }
+                }
+            });
+            
+            // 清理临时表格
+            document.body.removeChild(tempTable);
+
+            // 在生成PDF之前调整表格列宽和字体大小
+            function adjustTableForPDF(table) {
+                const pageWidth = 210; // A4纸宽度为210mm
+                const margins = 10; // 总边距为10mm（左右各5mm）
+                const availableWidth = pageWidth - margins;
+                
+                const columns = table.querySelectorAll('thead th');
+                const columnCount = columns.length;
+                const columnWidth = availableWidth / columnCount;
+                
+                columns.forEach(column => {
+                    column.style.width = `${columnWidth}mm`;
+                });
+                
+                const rows = table.querySelectorAll('tbody tr');
+                rows.forEach(row => {
+                    const cells = row.querySelectorAll('td');
+                    cells.forEach(cell => {
+                        cell.style.width = `${columnWidth}mm`;
+                        cell.style.fontSize = '9pt'; // 调整字体大小
+                        cell.style.lineHeight = '1.2'; // 调整行高
+                    });
+                });
+            }
+
+            // 在生成PDF时调用调整表格的函数
+            const tables = pages.map((pageRows, pageIndex) => {
+                const newTable = document.createElement('table');
+                newTable.style.width = '100%';
+                newTable.style.borderCollapse = 'collapse';
+                newTable.style.marginBottom = pageIndex < pages.length - 1 ? '20px' : '0';
+                
+                // 调整表格
+                adjustTableForPDF(newTable);
+                
+                // 创建表格包装器
+                const tableWrapper = document.createElement('div');
+                tableWrapper.style.pageBreakInside = 'avoid'; // 防止表格内部断页
+                tableWrapper.style.pageBreakAfter = pageIndex < pages.length - 1 ? 'always' : 'auto';
+                
+                // 添加表头
+                const thead = document.createElement('thead');
+                thead.style.display = 'table-header-group'; // 确保表头在每页重复
+                const newHeaderRow = headerRow.cloneNode(true);
+                Array.from(newHeaderRow.cells).forEach(cell => {
+                    cell.style.backgroundColor = '#333333';
+                    cell.style.color = '#ffffff';
+                    cell.style.padding = '8px';
+                    cell.style.border = '1px solid #000';
+                    cell.style.fontWeight = 'bold';
+                    cell.style.textAlign = 'center';
+                    cell.style.fontSize = '9pt'; // 调整字体大小
+                });
+                thead.appendChild(newHeaderRow);
+                newTable.appendChild(thead);
+                
+                // 添加数据行
+                const tbody = document.createElement('tbody');
+                tbody.style.pageBreakInside = 'avoid'; // 防止数据行断页
+                pageRows.forEach(row => {
+                    const newRow = row.cloneNode(true);
+                    Array.from(newRow.cells).forEach(cell => {
+                        cell.style.border = '1px solid #000';
+                        cell.style.padding = '8px';
+                        cell.style.textAlign = 'center';
+                        cell.style.verticalAlign = 'middle';
+                        cell.style.fontSize = '9pt'; // 调整字体大小
+                        cell.style.lineHeight = '1.2'; // 调整行高
+                        cell.style.height = 'auto';
+                        cell.style.wordBreak = 'break-word';
+                        cell.style.whiteSpace = 'pre-wrap';
+                    });
+                    tbody.appendChild(newRow);
+                });
+                newTable.appendChild(tbody);
+                
+                // 将表格添加到包装器中
+                tableWrapper.appendChild(newTable);
+                return tableWrapper;
+            });
+            
+            // 将所有表格添加到容器中
+            tables.forEach((table, index) => {
+                if (index === 0) {
+                    // 第一个表格添加额外的上边距，为标题留出空间
+                    table.style.marginTop = '10mm';
+                }
+                container.appendChild(table);
+            });
+            
+            // 配置PDF选项
+            const opt = {
+                margin: [5, 5, 5, 5], // 将边距改为5mm（上右下左）
+                filename: '分镜表.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { 
+                    scale: 2,
+                    useCORS: true,
+                    letterRendering: true,
+                    scrollY: 0
+                },
+                jsPDF: { 
+                    unit: 'mm', 
+                    format: 'a4', 
+                    orientation: 'portrait'
+                },
+                pagebreak: {
+                    mode: ['avoid-all', 'css', 'legacy'],
+                    before: '.page-break-before',
+                    after: '.page-break-after'
+                }
+            };
+            
+            // 生成PDF
+            html2pdf().set(opt).from(container).save().catch(err => {
+                console.error('PDF生成失败:', err);
+                alert('PDF导出失败，请稍后重试');
+            });
+        }
+    </script>
 </body>
 </html>
+
